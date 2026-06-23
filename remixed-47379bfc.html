@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>網路小盾牌：手機情境劇場</title>
+<style>
+  :root{
+    --sky:#3FA9F5;
+    --sun:#FFC93C;
+    --coral:#FF6B5B;
+    --leaf:#3DBE85;
+    --grape:#8B6FD6;
+    --ink:#243447;
+    --cream:#FFF8EC;
+    --bubble-them:#EDEFF3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+    background:radial-gradient(circle at 20% 10%, #6FC6F8 0%, var(--cream) 45%);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:30px 16px 60px;
+  }
+  .title{text-align:center;margin-bottom:6px;}
+  .title h1{font-size:28px;margin:0 0 4px;}
+  .title p{margin:0;font-size:14px;color:#46627d;max-width:480px;}
+  .badge{
+    display:inline-block;background:var(--sun);color:var(--ink);
+    padding:5px 14px;border-radius:999px;font-weight:bold;font-size:12px;
+    box-shadow:2px 2px 0 var(--ink);margin-bottom:10px;
+  }
+
+  .scene-picker{
+    display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+    margin:22px 0 26px;max-width:520px;
+  }
+  .scene-btn{
+    border:3px solid var(--ink);background:#fff;border-radius:14px;
+    padding:10px 16px;font-size:14px;cursor:pointer;font-weight:bold;
+    box-shadow:3px 3px 0 var(--ink);transition:.15s;
+  }
+  .scene-btn:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink);}
+  .scene-btn.active{background:var(--grape);color:#fff;}
+
+  .phone{
+    width:340px;max-width:90vw;height:660px;
+    background:#0b1422;border-radius:42px;padding:14px;
+    box-shadow:0 20px 50px rgba(11,20,34,0.35), inset 0 0 0 3px #1c2a3f;
+    position:relative;
+  }
+  .notch{
+    position:absolute;top:14px;left:50%;transform:translateX(-50%);
+    width:120px;height:22px;background:#0b1422;border-radius:0 0 16px 16px;
+    z-index:6;
+  }
+  .screen{
+    background:#fff;width:100%;height:100%;border-radius:30px;
+    overflow:hidden;display:flex;flex-direction:column;position:relative;
+  }
+
+  .switch-banner{
+    position:absolute;top:0;left:0;right:0;z-index:10;
+    background:#1c2a3f;color:#fff;text-align:center;
+    font-size:13px;padding:14px 10px;
+    transform:translateY(-100%);transition:transform .35s ease;
+  }
+  .switch-banner.show{transform:translateY(0);}
+
+  .chat-header{
+    color:#fff;padding:16px 16px 12px;display:flex;align-items:center;gap:10px;
+    padding-top:26px;transition:background .3s;
+  }
+  .chat-header.contact-group{background:linear-gradient(135deg,var(--sky),#69c2f5);}
+  .chat-header.contact-mom{background:linear-gradient(135deg,var(--coral),#ff9a8d);}
+  .chat-header.contact-teacher{background:linear-gradient(135deg,var(--leaf),#69d9a6);}
+  .chat-header.contact-stranger{background:linear-gradient(135deg,var(--grape),#ab8ee8);}
+
+  .avatar{
+    width:38px;height:38px;border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+    flex:0 0 auto;
+  }
+  .chat-header .name{font-weight:bold;font-size:15px;}
+  .chat-header .status{font-size:11px;opacity:.85;}
+
+  .chat-body{
+    flex:1;padding:14px 12px;overflow-y:auto;
+    display:flex;flex-direction:column;gap:10px;
+    background:#F4F7FB;
+  }
+  .msg-row{display:flex;animation:rise .35s ease both;}
+  @keyframes rise{
+    from{opacity:0;transform:translateY(14px) scale(.95);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+  }
+  .msg-row.me{justify-content:flex-end;}
+  .bubble{max-width:75%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;}
+  .msg-row.them .bubble{background:var(--bubble-them);border-bottom-left-radius:4px;}
+  .msg-row.me .bubble{background:var(--sky);color:#fff;border-bottom-right-radius:4px;}
+  .msg-row.system{justify-content:center;}
+  .msg-row.system .bubble{
+    background:#FFE9C6;color:#6b4e12;font-size:12px;border-radius:10px;text-align:center;
+  }
+  .msg-row.coach{justify-content:center;}
+  .msg-row.coach .bubble{
+    background:#fff;border:2px dashed var(--grape);color:var(--grape);
+    font-size:13px;border-radius:12px;font-weight:bold;text-align:center;
+  }
+
+  .typing{display:flex;gap:4px;padding:4px 6px;}
+  .typing span{width:6px;height:6px;border-radius:50%;background:#9aa6b5;animation:bounce 1s infinite;}
+  .typing span:nth-child(2){animation-delay:.15s;}
+  .typing span:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+
+  .choices{
+    padding:10px 12px 16px;background:#fff;border-top:1px solid #e3e7ee;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .choice-btn{
+    text-align:left;padding:11px 14px;border-radius:14px;border:2px solid var(--ink);
+    background:var(--cream);font-size:13.5px;cursor:pointer;transition:.15s;
+  }
+  .choice-btn:hover{background:#fff0d6;}
+  .choice-btn:disabled{opacity:.5;cursor:default;}
+  .choice-btn.correct{background:var(--leaf);color:#fff;border-color:var(--leaf);}
+  .choice-btn.wrong{background:var(--coral);color:#fff;border-color:var(--coral);}
+
+  .end-screen{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;padding:24px;text-align:center;
+  }
+  .end-screen .big-icon{font-size:50px;}
+  .end-screen h3{margin:0;font-size:19px;}
+  .end-screen p{margin:0;font-size:13.5px;color:#445;max-width:240px;}
+  .restart-btn{
+    background:var(--grape);color:#fff;border:none;padding:10px 24px;
+    border-radius:999px;font-size:14px;cursor:pointer;margin-top:6px;
+  }
+
+  .below-phone{margin-top:16px;max-width:340px;text-align:center;font-size:12.5px;color:#5a6b80;}
+</style>
+</head>
+<body>
+
+<div class="title">
+  <span class="badge">手機情境劇場</span>
+  <h1>網路小盾牌 🛡️</h1>
+  <p>選一個情境，跟著聊天訊息走。注意看「對話對象」有沒有換人——有時候要切到跟媽媽、老師的對話喔！</p>
+</div>
+
+<div class="scene-picker" id="scenePicker"></div>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen">
+    <div class="switch-banner" id="switchBanner"></div>
+    <div class="chat-header" id="chatHeader">
+      <div class="avatar" id="avatar">🙂</div>
+      <div>
+        <div class="name" id="chatName">選擇情境開始</div>
+        <div class="status" id="chatStatus">點上方按鈕選一個故事</div>
+      </div>
+    </div>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="choices" id="choices"></div>
+  </div>
+</div>
+
+<div class="below-phone">💡 小提醒：故事裡的角色都是虛構的，但情況可能真實發生在你我身邊。</div>
+
+<script>
+/* ===================== 場景資料 ===================== */
+const scenes = {
+  group: {
+    label:"😬 群組排擠",
+    start:"g1",
+    contacts:{
+      group:{name:"六年三班群組", avatar:"👥", cls:"contact-group", status:"32 位成員"},
+      mom:{name:"媽媽", avatar:"👩", cls:"contact-mom", status:"在線上"},
+      teacher:{name:"陳老師", avatar:"🧑‍🏫", cls:"contact-teacher", status:"在線上"},
+    },
+    nodes:{
+      g1:{thread:"group", trail:"群組對話",
+        messages:[
+          {from:"them", text:"欸大家不要理小傑了啦，他超無聊的 🙄"},
+          {from:"them", text:"對啊對啊，我們建一個新群組不要拉他進來"},
+          {from:"system", text:"你是小傑的好朋友，看到了這些對話……"},
+        ],
+        choices:[
+          {text:"跟著附和「對啊好煩」", next:"g2_bad", correct:false},
+          {text:"已讀不回，假裝沒看到", next:"g2_neutral", correct:false},
+          {text:"私訊小傑關心他，並打算告訴媽媽", next:"m1", correct:true},
+        ]
+      },
+      g2_bad:{thread:"group", trail:"跟著附和",
+        messages:[
+          {from:"coach", text:"⚠️ 跟著附和會讓小傑更受傷，你也可能變成霸凌的一份子。"},
+          {from:"them", text:"（幾天後）小傑都不太說話了，自己一個人吃午餐……"},
+        ],
+        choices:[{text:"重新想想該怎麼做", next:"g1", correct:null}]
+      },
+      g2_neutral:{thread:"group", trail:"假裝沒看到",
+        messages:[
+          {from:"coach", text:"🤔 已讀不回沒有參與霸凌，但小傑還是孤單地被排擠著，你能做更多。"},
+          {from:"them", text:"（隔天）群組還在傳小傑的壞話，沒有人阻止……"},
+        ],
+        choices:[{text:"重新想想該怎麼做", next:"g1", correct:null}]
+      },
+      m1:{thread:"mom", trail:"告訴媽媽",
+        messages:[
+          {from:"me", text:"媽媽，我可以跟你說一件事嗎？班上同學在群組排擠小傑"},
+          {from:"them", text:"怎麼了？你可以跟媽媽說詳細一點嗎？"},
+        ],
+        choices:[
+          {text:"詳細說明群組裡誰說了什麼、發生什麼事", sendText:"班上有同學在群組裡說「不要理小傑了，他超無聊」，還說要建新群組不拉他進去，已經兩三天了，我看了覺得小傑會難過", next:"m2_good", correct:true},
+          {text:"隨便講一下「就排擠他啊」就不說了", next:"m2_bad", correct:false},
+        ]
+      },
+      m2_bad:{thread:"mom", trail:"說不清楚",
+        messages:[
+          {from:"them", text:"媽媽有點不太清楚耶，可以再說清楚一點發生什麼事嗎？"},
+          {from:"coach", text:"🤔 把細節說清楚，大人才能真正幫上忙喔，試著再說一次看看。"},
+        ],
+        choices:[{text:"重新跟媽媽說明", next:"m1", correct:null}]
+      },
+      m2_good:{thread:"mom", trail:"說明清楚",
+        messages:[
+          {from:"them", text:"謝謝你告訴媽媽，這是很重要的事。我們明天一起跟導師說，好嗎？"},
+          {from:"me", text:"好，那我們去跟陳老師說"},
+        ],
+        choices:[{text:"切換到與陳老師的對話 →", next:"t1", correct:null}]
+      },
+      t1:{thread:"teacher", trail:"告訴老師",
+        messages:[
+          {from:"me", text:"老師，我想跟你說，班上群組有同學排擠小傑……"},
+          {from:"them", text:"謝謝你告訴我，你做得很好。我會找同學們聊聊，也會多關心小傑。"},
+          {from:"them", text:"老師最近想在班上推「秘密小天使」活動，每個人偷偷關心一位同學一週，像是分享小點心、留鼓勵小紙條，最後才公開身分。"},
+          {from:"them", text:"你願意當小傑的秘密小天使，這一週默默關心他、陪他聊聊天嗎？"},
+        ],
+        choices:[
+          {text:"好，我願意當小傑的秘密小天使，主動陪他、鼓勵他", next:"end_best", correct:true},
+          {text:"這樣會不會很奇怪，先觀察看看", next:"end_good", correct:true},
+        ]
+      },
+      end_best:{thread:"teacher",
+        end:{icon:"🛡️🌟", title:"任務完美達成！", msg:"你不只勇敢求助，還願意當小傑的秘密小天使，默默陪伴他度過難過的日子，是最棒的網路小盾牌！"}},
+      end_good:{thread:"teacher",
+        end:{icon:"🛡️", title:"任務完成！", msg:"你用勇氣和關心保護了朋友，這就是網路小盾牌的精神！"}},
+    }
+  },
+
+  dm: {
+    label:"📩 騷擾私訊",
+    start:"d1",
+    contacts:{
+      stranger:{name:"陌生帳號", avatar:"❓", cls:"contact-stranger", status:"不明帳號・小心"},
+      mom:{name:"媽媽", avatar:"👩", cls:"contact-mom", status:"在線上"},
+    },
+    nodes:{
+      d1:{thread:"stranger", trail:"收到騷擾",
+        messages:[
+          {from:"them", text:"嗨～你是不是OO國小六年三班的？"},
+          {from:"them", text:"你長得很醜耶 哈哈哈"},
+          {from:"them", text:"不理我是不是？我會一直傳訊息喔"},
+        ],
+        choices:[
+          {text:"也回罵回去，叫他不要再傳了", next:"d2_bad", correct:false},
+          {text:"傳自己的學校班級證明他說錯了", next:"d2_bad2", correct:false},
+          {text:"截圖、封鎖，並打算告訴媽媽", next:"d_action", correct:true},
+        ]
+      },
+      d2_bad:{thread:"stranger", trail:"回罵對方",
+        messages:[
+          {from:"coach", text:"⚠️ 互相對罵常常會讓對方傳更多訊息，情況可能更嚴重喔。"},
+          {from:"them", text:"哈哈你生氣了喔？我傳更多給你看！"},
+        ],
+        choices:[{text:"重新想想該怎麼做", next:"d1", correct:null}]
+      },
+      d2_bad2:{thread:"stranger", trail:"透露個資",
+        messages:[
+          {from:"coach", text:"⚠️ 絕對不要把學校、班級等個人資訊告訴陌生帳號，這樣反而更危險！"},
+          {from:"them", text:"太好了，這樣我更好找到你了 😏"},
+        ],
+        choices:[{text:"重新想想該怎麼做", next:"d1", correct:null}]
+      },
+      d_action:{thread:"stranger", trail:"截圖＋封鎖",
+        messages:[
+          {from:"system", text:"在告訴媽媽之前，先做好兩件保護自己的事吧！點下面的按鈕試試看："},
+        ],
+        actions:[
+          {id:"screenshot", label:"📸 截圖保存對話", doneText:"✅ 已截圖，對話內容保存起來了"},
+          {id:"block", label:"🚫 封鎖這個帳號", doneText:"✅ 已封鎖「陌生帳號」，他無法再傳訊息給你了"},
+        ],
+        next:"dm1"
+      },
+      dm1:{thread:"mom", trail:"告訴媽媽",
+        messages:[
+          {from:"me", text:"媽媽，有陌生人一直傳奇怪的訊息給我，我已經截圖並封鎖了"},
+          {from:"them", text:"你做得很好！可以給媽媽看一下截圖內容，詳細說說發生什麼事嗎？我們可能需要跟平台回報，必要時還要報警"},
+        ],
+        choices:[
+          {text:"把對話內容詳細描述給媽媽，一起回報帳號", sendText:"他先問我是不是OO國小六年三班，然後說我很醜，我不理他他就說會一直傳訊息給我，我整段都截圖了", next:"dm2_good", correct:true},
+          {text:"說沒事了、不用看截圖", next:"dm2_bad", correct:false},
+        ]
+      },
+      dm2_bad:{thread:"mom", trail:"隱瞞細節",
+        messages:[
+          {from:"them", text:"如果你願意給媽媽多一點資訊，我們才能真正保護你喔。"},
+          {from:"coach", text:"🤔 把證據和細節交給信任的大人，才能讓他們真正幫上忙。"},
+        ],
+        choices:[{text:"重新告訴媽媽詳情", next:"dm1", correct:null}]
+      },
+      dm2_good:{thread:"mom", trail:"提供證據",
+        messages:[
+          {from:"them", text:"謝謝你，這些都是很重要的證據。我們現在就一起到這個平台回報這個帳號。"},
+          {from:"system", text:"（媽媽陪著你在App裡點了「檢舉」，並選擇「騷擾」作為原因）"},
+          {from:"them", text:"做得很好。記得，遇到陌生帳號騷擾，永遠不要自己一個人處理，要告訴像媽媽一樣信任的大人。"},
+        ],
+        choices:[{text:"完成任務 →", next:"end_dm", correct:true}]
+      },
+      end_dm:{thread:"mom",
+        end:{icon:"🛡️📱", title:"任務完成！", msg:"你冷靜截圖、封鎖陌生帳號，還主動告訴信任的大人並一起回報，這就是聰明又勇敢的網路小盾牌！"}},
+    }
+  },
+};
+
+/* ===================== 互動引擎 ===================== */
+const scenePicker = document.getElementById('scenePicker');
+const switchBanner = document.getElementById('switchBanner');
+const chatHeader = document.getElementById('chatHeader');
+const avatarEl = document.getElementById('avatar');
+const chatName = document.getElementById('chatName');
+const chatStatus = document.getElementById('chatStatus');
+const chatBody = document.getElementById('chatBody');
+const choicesEl = document.getElementById('choices');
+
+let activeSceneKey = null;
+let activeScene = null;
+let activeThread = null;
+
+function buildScenePicker(){
+  scenePicker.innerHTML = '';
+  Object.keys(scenes).forEach(key=>{
+    const btn = document.createElement('button');
+    btn.className = 'scene-btn';
+    btn.textContent = scenes[key].label;
+    btn.dataset.key = key;
+    btn.addEventListener('click', ()=> startScene(key));
+    scenePicker.appendChild(btn);
+  });
+}
+
+function setActiveSceneButton(key){
+  Array.from(scenePicker.children).forEach(b=>{
+    b.classList.toggle('active', b.dataset.key === key);
+  });
+}
+
+function startScene(key){
+  activeSceneKey = key;
+  activeScene = scenes[key];
+  activeThread = null;
+  chatBody.innerHTML = '';
+  choicesEl.innerHTML = '';
+  setActiveSceneButton(key);
+  goToNode(activeScene.start);
+}
+
+function updateHeader(threadKey){
+  const contact = activeScene.contacts[threadKey];
+  chatHeader.className = 'chat-header ' + contact.cls;
+  avatarEl.textContent = contact.avatar;
+  chatName.textContent = contact.name;
+  chatStatus.textContent = contact.status || '';
+}
+
+function showSwitchBanner(threadKey){
+  const contact = activeScene.contacts[threadKey];
+  switchBanner.textContent = '📱 切換到「' + contact.name + '」的聊天室';
+  switchBanner.classList.add('show');
+  setTimeout(()=> switchBanner.classList.remove('show'), 1600);
+}
+
+function scrollToBottom(){
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function appendMessage(msg, instant, cb){
+  const row = document.createElement('div');
+  let rowClass = 'them';
+  if(msg.from === 'me') rowClass = 'me';
+  else if(msg.from === 'system') rowClass = 'system';
+  else if(msg.from === 'coach') rowClass = 'coach';
+  row.className = 'msg-row ' + rowClass;
+
+  if(!instant && msg.from === 'them'){
+    const typingBubble = document.createElement('div');
+    typingBubble.className = 'bubble';
+    typingBubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    row.appendChild(typingBubble);
+    chatBody.appendChild(row);
+    scrollToBottom();
+    setTimeout(()=>{
+      typingBubble.textContent = msg.text;
+      scrollToBottom();
+      cb && cb();
+    }, 650);
+  } else {
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = msg.text;
+    row.appendChild(bubble);
+    chatBody.appendChild(row);
+    scrollToBottom();
+    setTimeout(()=> cb && cb(), 220);
+  }
+}
+
+function playMessages(messages, idx, done){
+  if(idx >= messages.length){ done && done(); return; }
+  appendMessage(messages[idx], false, ()=>{
+    playMessages(messages, idx + 1, done);
+  });
+}
+
+function goToNode(nodeKey){
+  const node = activeScene.nodes[nodeKey];
+  choicesEl.innerHTML = '';
+
+  const threadChanged = node.thread !== activeThread;
+  if(threadChanged){
+    if(activeThread !== null){ showSwitchBanner(node.thread); }
+    chatBody.innerHTML = '';
+    activeThread = node.thread;
+    updateHeader(node.thread);
+  }
+
+  playMessages(node.messages || [], 0, ()=>{
+    if(node.end){ renderEnd(node.end); }
+    else if(node.actions){ renderActions(node); }
+    else if(node.choices){ renderChoices(node.choices); }
+  });
+}
+
+function renderChoices(choices){
+  choicesEl.innerHTML = '';
+  const buttons = [];
+  choices.forEach(choice=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice.text;
+    btn.addEventListener('click', ()=>{
+      buttons.forEach(b=> b.disabled = true);
+      if(choice.correct === true) btn.classList.add('correct');
+      if(choice.correct === false) btn.classList.add('wrong');
+
+      const advance = ()=>{
+        if(choice.sendText){
+          appendMessage({from:'me', text: choice.sendText}, true, ()=> goToNode(choice.next));
+        } else {
+          goToNode(choice.next);
+        }
+      };
+      if(choice.correct === null){ advance(); }
+      else { setTimeout(advance, 700); }
+    });
+    buttons.push(btn);
+    choicesEl.appendChild(btn);
+  });
+}
+
+function renderActions(node){
+  choicesEl.innerHTML = '';
+  const completed = new Set();
+  node.actions.forEach(action=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = action.label;
+    btn.addEventListener('click', ()=>{
+      if(completed.has(action.id)) return;
+      completed.add(action.id);
+      btn.classList.add('correct');
+      btn.disabled = true;
+      appendMessage({from:'system', text: action.doneText}, true, ()=>{
+        if(completed.size === node.actions.length){
+          setTimeout(()=> goToNode(node.next), 500);
+        }
+      });
+    });
+    choicesEl.appendChild(btn);
+  });
+}
+
+function renderEnd(end){
+  choicesEl.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'end-screen';
+  wrap.innerHTML =
+    '<div class="big-icon">' + end.icon + '</div>' +
+    '<h3>' + end.title + '</h3>' +
+    '<p>' + end.msg + '</p>' +
+    '<button class="restart-btn" id="restartBtn">再玩一次</button>';
+  chatBody.appendChild(wrap);
+  scrollToBottom();
+  document.getElementById('restartBtn').addEventListener('click', ()=> startScene(activeSceneKey));
+}
+
+buildScenePicker();
+</script>
+</body>
+</html>
